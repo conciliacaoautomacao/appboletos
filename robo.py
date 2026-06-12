@@ -5,7 +5,7 @@ PORTAL_URL = "https://portal.gooroocredito.com.br"
 COBRANCAS_URL = "https://portal.gooroocredito.com.br/painel/cobrancas-menu/"
 
 EMAIL = "bruno.mascio@gooroocredito.com.br"
-SENHA = "Admin@3256"
+SENHA = "Admin@2908"
 
 
 def executar_teste_login():
