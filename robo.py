@@ -33,12 +33,26 @@ def executar_teste_login():
 
         time.sleep(5)
 
+        print("Estamos na tela de Cobranças")
         print("URL atual:", page.url)
+        
+        inputs = page.locator("input")
+        qtd = inputs.count()
+        
+        print(f"Total de inputs encontrados: {qtd}")
+        
+        for i in range(qtd):
+            try:
+                print(
+                    i,
+                    inputs.nth(i).get_attribute("name"),
+                    inputs.nth(i).get_attribute("id"),
+                    inputs.nth(i).get_attribute("placeholder")
+                )
+            except:
+                pass
+        
         page.screenshot(path="debug_cobrancas.png", full_page=True)
-
+        
         input("Pressione ENTER para fechar...")
         browser.close()
-
-
-if __name__ == "__main__":
-    executar_teste_login()
