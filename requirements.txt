@@ -1,1 +1,6 @@
-
+streamlit
+pandas
+openpyxl
+supabase
+python-dotenv
+playwright
