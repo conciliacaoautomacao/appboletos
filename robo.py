@@ -5,7 +5,7 @@ PORTAL_URL = "https://portal.gooroocredito.com.br"
 COBRANCAS_URL = "https://portal.gooroocredito.com.br/painel/cobrancas-menu/"
 
 EMAIL = "bruno.mascio@gooroocredito.com.br"
-SENHA = "Admin@2908"
+SENHA = "SUA_SENHA_AQUI"
 
 
 def executar_teste_login():
@@ -25,9 +25,9 @@ def executar_teste_login():
 
         print("Resolva o captcha manualmente e clique em ENTRAR no navegador.")
         print("Depois que o portal abrir o painel, volte aqui e pressione ENTER.")
-        
+
         input("Pressione ENTER após concluir o login...")
-        
+
         print("Acessando Cobranças...")
         page.goto(COBRANCAS_URL, wait_until="domcontentloaded", timeout=60000)
 
@@ -35,12 +35,12 @@ def executar_teste_login():
 
         print("Estamos na tela de Cobranças")
         print("URL atual:", page.url)
-        
+
         inputs = page.locator("input")
         qtd = inputs.count()
-        
+
         print(f"Total de inputs encontrados: {qtd}")
-        
+
         for i in range(qtd):
             try:
                 print(
@@ -49,16 +49,14 @@ def executar_teste_login():
                     inputs.nth(i).get_attribute("id"),
                     inputs.nth(i).get_attribute("placeholder")
                 )
-            except:
-                pass
-        
+            except Exception as e:
+                print("Erro ao ler input", i, e)
+
         page.screenshot(path="debug_cobrancas.png", full_page=True)
-        
+
         input("Pressione ENTER para fechar...")
         browser.close()
 
-        print(">>> AGUARDANDO ENTER NO TERMINAL <<<")
-        input("Pressione ENTER após concluir o login...")
-        print(">>> ENTER RECEBIDO, CONTINUANDO <<<")
 
-        print("ENTER recebido. Indo para Cobranças...")
+if __name__ == "__main__":
+    executar_teste_login()
