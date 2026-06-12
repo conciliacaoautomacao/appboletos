@@ -56,3 +56,9 @@ def executar_teste_login():
         
         input("Pressione ENTER para fechar...")
         browser.close()
+
+        print(">>> AGUARDANDO ENTER NO TERMINAL <<<")
+        input("Pressione ENTER após concluir o login...")
+        print(">>> ENTER RECEBIDO, CONTINUANDO <<<")
+
+        print("ENTER recebido. Indo para Cobranças...")
