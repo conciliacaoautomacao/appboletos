@@ -2,6 +2,7 @@ from playwright.sync_api import sync_playwright
 import time
 
 PORTAL_URL = "https://portal.gooroocredito.com.br"
+COBRANCAS_URL = "https://portal.gooroocredito.com.br/painel/cobrancas-menu/"
 
 EMAIL = "bruno.mascio@gooroocredito.com.br"
 SENHA = "Admin@3256"
@@ -14,37 +15,27 @@ def executar_teste_login():
             slow_mo=700
         )
 
-        context = browser.new_context()
-        page = context.new_page()
+        page = browser.new_page()
 
         print("Abrindo portal...")
         page.goto(PORTAL_URL, wait_until="domcontentloaded", timeout=60000)
 
-        time.sleep(8)
+        page.fill('input[name="login"]', EMAIL)
+        page.fill('input[name="password"]', SENHA)
+
+        page.click('button:has-text("ENTRAR")')
+
+        time.sleep(5)
+
+        print("Acessando Cobranças...")
+        page.goto(COBRANCAS_URL, wait_until="domcontentloaded", timeout=60000)
+
+        time.sleep(5)
 
         print("URL atual:", page.url)
-        page.screenshot(path="debug_login.png", full_page=True)
+        page.screenshot(path="debug_cobrancas.png", full_page=True)
 
-        print("Procurando campos...")
-
-        campos = page.locator("input")
-        qtd = campos.count()
-
-        print(f"Quantidade de inputs encontrados: {qtd}")
-
-        for i in range(qtd):
-            try:
-                print(
-                    i,
-                    campos.nth(i).get_attribute("type"),
-                    campos.nth(i).get_attribute("name"),
-                    campos.nth(i).get_attribute("placeholder")
-                )
-            except:
-                pass
-
-        input("Veja o navegador. Pressione ENTER para continuar...")
-
+        input("Pressione ENTER para fechar...")
         browser.close()
 
 
