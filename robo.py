@@ -23,10 +23,11 @@ def executar_teste_login():
         page.fill('input[name="login"]', EMAIL)
         page.fill('input[name="password"]', SENHA)
 
-        page.click('button:has-text("ENTRAR")')
-
-        time.sleep(5)
-
+        print("Resolva o captcha manualmente e clique em ENTRAR no navegador.")
+        print("Depois que o portal abrir o painel, volte aqui e pressione ENTER.")
+        
+        input("Pressione ENTER após concluir o login...")
+        
         print("Acessando Cobranças...")
         page.goto(COBRANCAS_URL, wait_until="domcontentloaded", timeout=60000)
 
