@@ -96,11 +96,8 @@ if arquivo:
                 "data_do_pagamento": data_pgto.strftime("%Y-%m-%d"),
                 "status_robo": "PENDENTE",
                 "etapa": "IMPORTADO"
-            })
-    
-        st.write("Prévia do que será enviado:")
-        st.write(registros[:3])
-
+            })    
+        
         nosso_numeros = [
             str(r["nosso_numero"]).strip()
             for r in registros
