@@ -12,59 +12,98 @@ load_dotenv()
 
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
-
 EMAIL = os.getenv("PORTAL_EMAIL")
 SENHA = os.getenv("PORTAL_SENHA")
 
-supabase = create_client(
-    SUPABASE_URL,
-    SUPABASE_KEY
-)
+supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
-boleto["nosso_numero"]
-boleto["valor_pago"]
-boleto["data_do_pagamento"]
 
 def buscar_boletos_pendentes():
-
     res = (
         supabase
         .table("robo_boletos")
         .select("*")
         .eq("status_robo", "PENDENTE")
-        .order("id")
+        .order("created_at")
         .execute()
     )
-
     return res.data
 
 
-def executar_teste_login():
-    with sync_playwright() as p:
-        browser = p.chromium.launch(
-            headless=False,
-            slow_mo=700
-        )
+def atualizar_boleto(nosso_numero, dados):
+    supabase.table("robo_boletos").update(dados).eq(
+        "nosso_numero",
+        str(nosso_numero)
+    ).execute()
 
-        page = browser.new_page()
 
-        print("Abrindo portal...")
-        page.goto(PORTAL_URL, wait_until="domcontentloaded", timeout=60000)
+def formatar_valor_br(valor):
+    return (
+        f"{float(valor):,.2f}"
+        .replace(",", "X")
+        .replace(".", ",")
+        .replace("X", ".")
+    )
 
-        page.fill('input[name="login"]', EMAIL)
-        page.fill('input[name="password"]', SENHA)
 
-        print("Resolva o captcha manualmente e clique em ENTRAR no navegador.")
-        print("Depois que o portal abrir o painel, volte aqui e pressione ENTER.")
+def formatar_data_br(data_bd):
+    ano, mes, dia = str(data_bd).split("-")
+    return f"{dia}/{mes}/{ano}"
 
-        input("Pressione ENTER após concluir o login...")
 
-        print("Acessando Cobranças...")
+def identificar_status_portal(texto_linha):
+    texto = texto_linha.lower()
+
+    if "em aberto" in texto:
+        return "Em aberto"
+    if "pago" in texto:
+        return "Pago"
+    if "baixado" in texto:
+        return "Baixado"
+    if "cancelado" in texto:
+        return "Cancelado"
+    if "liquidado" in texto:
+        return "Liquidado"
+
+    return "DESCONHECIDO"
+
+
+def fazer_login(page):
+    print("Abrindo portal...")
+    page.goto(PORTAL_URL, wait_until="domcontentloaded", timeout=60000)
+
+    page.fill('input[name="login"]', EMAIL)
+    page.fill('input[name="password"]', SENHA)
+
+    print("Resolva o captcha manualmente e clique em ENTRAR no navegador.")
+    print("Depois que o portal abrir o painel, volte aqui e pressione ENTER.")
+
+    input("Pressione ENTER após concluir o login...")
+
+    print("Acessando Cobranças...")
+    page.goto(COBRANCAS_URL, wait_until="domcontentloaded", timeout=60000)
+    time.sleep(5)
+
+
+def processar_boleto(page, boleto):
+    nosso_numero = str(boleto["nosso_numero"])
+    valor_pago = formatar_valor_br(boleto["valor_pago"])
+    data_pagamento = formatar_data_br(boleto["data_do_pagamento"])
+
+    print("--------------------------------")
+    print("Processando boleto:", nosso_numero)
+    print("Valor:", valor_pago)
+    print("Data:", data_pagamento)
+
+    atualizar_boleto(nosso_numero, {
+        "status_robo": "PROCESSANDO",
+        "etapa": "INICIADO",
+        "tentativas": int(boleto.get("tentativas") or 0) + 1
+    })
+
+    try:
         page.goto(COBRANCAS_URL, wait_until="domcontentloaded", timeout=60000)
-
-        time.sleep(5)
-
-        print("Preenchendo Nosso Número...")
+        time.sleep(3)
 
         campo_nosso_numero = page.get_by_role(
             "textbox",
@@ -72,12 +111,12 @@ def executar_teste_login():
         )
 
         campo_nosso_numero.wait_for(timeout=30000)
-        campo_nosso_numero.click()
-        campo_nosso_numero.fill(NOSSO_NUMERO_TESTE)
+        campo_nosso_numero.click(force=True)
+        page.keyboard.press("Control+A")
+        page.keyboard.press("Backspace")
+        campo_nosso_numero.fill(nosso_numero)
 
-        time.sleep(2)
-
-        print("Clicando em Aplicar Filtros...")
+        time.sleep(1)
 
         botao_filtro = page.get_by_role(
             "button",
@@ -87,29 +126,37 @@ def executar_teste_login():
         botao_filtro.click()
         time.sleep(5)
 
-        print("Lendo linhas da tabela...")
-
         linhas = page.locator("table tbody tr")
         qtd_linhas = linhas.count()
 
-        print(f"Total de linhas encontradas: {qtd_linhas}")
-
         if qtd_linhas == 0:
-            print("Nenhum boleto encontrado.")
-            input("Pressione ENTER para fechar...")
-            browser.close()
+            atualizar_boleto(nosso_numero, {
+                "status_robo": "ERRO",
+                "status_boleto_portal": "NAO_ENCONTRADO",
+                "mensagem_retorno": "Boleto não encontrado no portal",
+                "etapa": "PESQUISA",
+                "processed_at": datetime.now().isoformat()
+            })
             return
 
         texto_linha = linhas.first.inner_text()
-        print("LINHA:", texto_linha)
+        status_portal = identificar_status_portal(texto_linha)
 
-        if "Em aberto" not in texto_linha:
-            print("Boleto não está Em aberto. Não será processado.")
-            input("Pressione ENTER para fechar...")
-            browser.close()
+        if status_portal != "Em aberto":
+            atualizar_boleto(nosso_numero, {
+                "status_robo": "NAO_PROCESSADO",
+                "status_boleto_portal": status_portal,
+                "mensagem_retorno": f"Não processado - boleto já {status_portal}",
+                "etapa": "VALIDACAO_STATUS",
+                "processed_at": datetime.now().isoformat()
+            })
+            print(f"Não processado - boleto já {status_portal}")
             return
 
-        print("Boleto está Em aberto. Abrindo edição...")
+        atualizar_boleto(nosso_numero, {
+            "status_boleto_portal": "Em aberto",
+            "etapa": "BOLETO_EM_ABERTO"
+        })
 
         botao_olho = linhas.first.locator("button").first
         botao_olho.wait_for(timeout=30000)
@@ -123,13 +170,6 @@ def executar_teste_login():
 
         time.sleep(5)
 
-        page.screenshot(
-            path="debug_edicao_aberta.png",
-            full_page=True
-        )
-
-        print("Preenchendo Valor pago...")
-
         campo_valor_pago = page.get_by_role(
             "textbox",
             name="Valor pago"
@@ -141,13 +181,9 @@ def executar_teste_login():
 
         page.keyboard.press("Control+A")
         page.keyboard.press("Backspace")
-        page.keyboard.type(VALOR_PAGO_TESTE)
+        page.keyboard.type(valor_pago)
 
         time.sleep(1)
-
-        print("Valor pago preenchido.")
-
-        print("Abrindo Data do pagamento...")
 
         campo_data_pagamento = page.get_by_role(
             "textbox",
@@ -156,53 +192,28 @@ def executar_teste_login():
 
         campo_data_pagamento.wait_for(timeout=30000)
         campo_data_pagamento.scroll_into_view_if_needed()
-
-        container_data = page.locator(
-            "label:has-text('Data do pagamento')"
-        ).locator(
-            "xpath=ancestor::div[contains(@class, 'v-input')][1]"
-        )
-
-        print("Clicando no ícone do calendário...")
-
         campo_data_pagamento.click(force=True)
+
         time.sleep(1)
 
-        # força abrir o datepicker via seta para baixo
         page.keyboard.press("ArrowDown")
         time.sleep(1)
         page.keyboard.press("Enter")
         time.sleep(2)
 
-        time.sleep(2)
-
-        page.screenshot(
-            path="debug_apos_clique_icone_calendario.png",
-            full_page=True
-        )
-
-        dia, mes, ano = DATA_PAGAMENTO_TESTE.split("/")
+        dia, mes, ano = data_pagamento.split("/")
         dia_sem_zero = str(int(dia))
-
-        print(f"Selecionando dia {dia_sem_zero}...")
 
         dias = page.locator("button.v-btn").filter(
             has_text=dia_sem_zero
         )
 
-        qtd_dias = dias.count()
-        print("Dias encontrados:", qtd_dias)
-
-        if qtd_dias == 0:
+        if dias.count() == 0:
             raise Exception("Dia não encontrado no calendário.")
 
-        dias.filter(has_text=dia_sem_zero).first.click(force=True)
+        dias.first.click(force=True)
 
         time.sleep(1)
-
-        print("Data selecionada.")
-
-        print("Selecionando Status Pago dentro da edição...")
 
         campo_status_edicao = page.locator(
             "label:has-text('Status')"
@@ -211,7 +222,6 @@ def executar_teste_login():
         )
 
         campo_status_edicao.click(force=True)
-
         time.sleep(1)
 
         opcao_pago = page.locator(".v-list-item").filter(
@@ -221,13 +231,6 @@ def executar_teste_login():
         opcao_pago.click(force=True)
 
         time.sleep(1)
-
-        page.screenshot(
-            path="debug_status_pago_dentro_edicao.png",
-            full_page=True
-        )
-
-        print("Clicando em SALVAR...")
 
         botao_salvar = page.get_by_role(
             "button",
@@ -239,30 +242,48 @@ def executar_teste_login():
 
         time.sleep(5)
 
-        page.screenshot(
-            path="debug_apos_salvar.png",
-            full_page=True
-        )
+        atualizar_boleto(nosso_numero, {
+            "status_robo": "SUCESSO",
+            "status_boleto_portal": "Pago",
+            "mensagem_retorno": "Baixa realizada com sucesso",
+            "etapa": "FINALIZADO",
+            "processed_at": datetime.now().isoformat()
+        })
 
-        print("Processo salvo. Confira o resultado.")
+        print("Baixa realizada com sucesso:", nosso_numero)
 
-        input("Confira se salvou corretamente. Pressione ENTER para fechar.")
+    except Exception as e:
+        atualizar_boleto(nosso_numero, {
+            "status_robo": "ERRO",
+            "mensagem_retorno": str(e),
+            "etapa": "ERRO",
+            "processed_at": datetime.now().isoformat()
+        })
 
-        browser.close()
+        print("Erro ao processar boleto:", nosso_numero, e)
 
 
 if __name__ == "__main__":
-
     boletos = buscar_boletos_pendentes()
 
-    print(
-        f"Boletos pendentes encontrados: {len(boletos)}"
-    )
+    print(f"Boletos pendentes encontrados: {len(boletos)}")
 
-    for b in boletos:
-        print(
-            b["id"],
-            b["nosso_numero"],
-            b["valor_pago"],
-            b["data_do_pagamento"]
+    if not boletos:
+        exit()
+
+    with sync_playwright() as p:
+        browser = p.chromium.launch(
+            headless=False,
+            slow_mo=700
         )
+
+        page = browser.new_page()
+
+        fazer_login(page)
+
+        for boleto in boletos:
+            processar_boleto(page, boleto)
+
+        print("Fila finalizada.")
+        input("Pressione ENTER para fechar o navegador...")
+        browser.close()
