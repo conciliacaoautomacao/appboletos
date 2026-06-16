@@ -50,18 +50,30 @@ if arquivo:
 
     if st.button("Enviar para fila do robô"):
         registros = []
-
+    
         for _, row in df.iterrows():
+            valor_pago = str(row["valor_pago"]).strip()
+            valor_pago = valor_pago.replace(".", "").replace(",", ".")
+    
+            data_pgto = pd.to_datetime(
+                row["data_do_pagamento"],
+                dayfirst=True,
+                errors="coerce"
+            )
+    
             registros.append({
                 "cpf": str(row["cpf"]).strip(),
                 "contrato": str(row["contrato"]).strip(),
                 "nosso_numero": str(row["nosso_numero"]).strip(),
-                "valor_pago": str(row["valor_pago"]).replace(",", "."),
-                "data_do_pagamento": str(row["data_do_pagamento"]).strip(),
+                "valor_pago": float(valor_pago),
+                "data_do_pagamento": data_pgto.strftime("%Y-%m-%d"),
                 "status_robo": "PENDENTE",
                 "etapa": "IMPORTADO"
             })
-
+    
+        st.write("Prévia do que será enviado:")
+        st.write(registros[:3])
+    
         supabase.table("robo_boletos").insert(registros).execute()
-
+    
         st.success("Base enviada para a fila do robô com sucesso!")
