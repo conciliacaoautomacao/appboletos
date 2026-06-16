@@ -21,9 +21,9 @@ supabase = create_client(
     SUPABASE_KEY
 )
 
-NOSSO_NUMERO_TESTE = "175119"
-VALOR_PAGO_TESTE = "1.446,50"
-DATA_PAGAMENTO_TESTE = "16/06/2026"
+boleto["nosso_numero"]
+boleto["valor_pago"]
+boleto["data_do_pagamento"]
 
 def buscar_boletos_pendentes():
 
