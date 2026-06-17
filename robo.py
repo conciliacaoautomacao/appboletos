@@ -279,7 +279,7 @@ if __name__ == "__main__":
     with sync_playwright() as p:
         browser = p.chromium.launch(
             headless=False,
-            slow_mo=700
+            slow_mo=100
         )
 
         page = browser.new_page()
