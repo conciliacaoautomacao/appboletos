@@ -3,11 +3,14 @@ import pandas as pd
 from supabase import create_client
 from dotenv import load_dotenv
 import os
+import subprocess
+import sys
 
 st.set_page_config(
     page_title="Fila de Processamento",
     page_icon="📋",
     layout="wide"
+)
     
 load_dotenv()
 
@@ -17,6 +20,19 @@ SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 st.title("📋 Fila de Processamento")
+
+col_botao1, col_botao2 = st.columns([1, 4])
+
+with col_botao1:
+    if st.button("▶️ Iniciar Robô", use_container_width=True):
+        caminho_robo = os.path.join(os.getcwd(), "robo.py")
+
+        subprocess.Popen(
+            [sys.executable, caminho_robo],
+            creationflags=subprocess.CREATE_NEW_CONSOLE
+        )
+
+        st.success("Robô iniciado. Resolva o captcha na janela que abriu.")
 
 res = (
     supabase
