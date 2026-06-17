@@ -36,7 +36,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 inicio = st.Page(
-    "pages/dashboard.py",
+    "pages/inicio.py",
     title="🏠 Início",
     icon="🏠"
 )
