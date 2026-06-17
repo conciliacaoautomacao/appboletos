@@ -1,15 +1,18 @@
 import streamlit as st
 import pandas as pd
 from supabase import create_client
+from dotenv import load_dotenv
+import os
 
 st.set_page_config(
     page_title="Fila de Processamento",
     page_icon="📋",
     layout="wide"
-)
+    
+load_dotenv()
 
-SUPABASE_URL = st.secrets["SUPABASE_URL"]
-SUPABASE_KEY = st.secrets["SUPABASE_KEY"]
+SUPABASE_URL = os.getenv("SUPABASE_URL") or st.secrets.get("SUPABASE_URL")
+SUPABASE_KEY = os.getenv("SUPABASE_KEY") or st.secrets.get("SUPABASE_KEY")
 
 supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
