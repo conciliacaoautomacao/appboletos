@@ -78,9 +78,14 @@ def fazer_login(page):
     print("Resolva o captcha manualmente e clique em ENTRAR no navegador.")
     print("Depois que o portal abrir o painel, volte aqui e pressione ENTER.")
 
-    input("Pressione ENTER após concluir o login...")
+    print("Aguardando login ser concluído automaticamente...")
 
-    print("Acessando Cobranças...")
+    page.wait_for_url(
+        "**/painel/**",
+        timeout=180000
+    )
+    
+    print("Login detectado. Acessando Cobranças...")
     page.goto(COBRANCAS_URL, wait_until="domcontentloaded", timeout=60000)
     time.sleep(5)
 
