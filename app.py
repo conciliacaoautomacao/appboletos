@@ -60,7 +60,7 @@ fila = st.Page(
 )
 
 config = st.Page(
-    "pages/4_Config_Campos.py",
+    "pages/Config_Campos.py",
     title="⚙️ Configurações",
     icon="⚙️"
 )
