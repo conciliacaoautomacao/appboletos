@@ -37,31 +37,31 @@ st.markdown("""
 
 inicio = st.Page(
     "pages/inicio.py",
-    title="🏠 Início",
+    title="Início",
     icon="🏠"
 )
 
 dashboard = st.Page(
     "pages/dashboard.py",
-    title="📊 Dashboard",
+    title="Dashboard",
     icon="📊"
 )
 
 upload = st.Page(
     "pages/upload_base.py",
-    title="📤 Upload Base",
+    title="Upload Base",
     icon="📤"
 )
 
 fila = st.Page(
     "pages/fila_processamento.py",
-    title="📋 Fila de Processamento",
+    title="Fila de Processamento",
     icon="📋"
 )
 
 config = st.Page(
     "pages/Config_Campos.py",
-    title="⚙️ Configurações",
+    title="Configurações",
     icon="⚙️"
 )
 
