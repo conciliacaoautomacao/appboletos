@@ -290,5 +290,7 @@ if __name__ == "__main__":
             processar_boleto(page, boleto)
 
         print("Fila finalizada.")
-        input("Pressione ENTER para fechar o navegador...")
+
+        time.sleep(3)
+        
         browser.close()
