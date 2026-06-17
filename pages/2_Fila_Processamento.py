@@ -29,7 +29,10 @@ with col_botao1:
 
         subprocess.Popen(
             [sys.executable, caminho_robo],
-            creationflags=subprocess.CREATE_NEW_CONSOLE
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            stdin=subprocess.DEVNULL,
+            creationflags=subprocess.CREATE_NO_WINDOW
         )
 
         st.success("Robô iniciado. Resolva o captcha na janela que abriu.")
