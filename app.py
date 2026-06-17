@@ -59,6 +59,12 @@ fila = st.Page(
     icon="📋"
 )
 
+relatorios = st.Page(
+    "pages/relatorios.py",
+    title="Relatórios",
+    icon="📑"
+)
+
 config = st.Page(
     "pages/Config_Campos.py",
     title="Configurações",
@@ -70,6 +76,7 @@ pg = st.navigation([
     dashboard,
     upload,
     fila,
+    relatorios,
     config
 ])
 
